@@ -1,31 +1,33 @@
 import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { useAuthStore } from "./stores/useAuthStore";
+import { Toaster } from "./components/global/toast/Toaster";
+import { SignupPage } from "./pages/SignupPage";
 
-function App() {
-  const [count, setCount] = useState(0);
+type AuthView = "login" | "signup" | "reset";
+
+export default function App() {
+  const { isAuthenticated } = useAuthStore();
+
+  const [authView, setAuthView] = useState<AuthView>("signup");
+
+  if (!isAuthenticated) {
+    return (
+      <>
+        {authView === "signup" && <SignupPage onNavigateToLogin={() => setAuthView("login")} />}
+        {authView === "login" && (
+          <div className="min-h-screen flex items-center justify-center">
+            <p>Login page not implemented yet</p>
+          </div>
+        )}
+        <Toaster />
+      </>
+    );
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
+    <div className="min-h-screen bg-[var(--bg-main)] flex flex-col">
+      <SignupPage onNavigateToLogin={() => setAuthView("login")} />
+      <Toaster />
+    </div>
   );
 }
-
-export default App;
