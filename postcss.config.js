@@ -3,4 +3,8 @@ export default {
     tailwindcss: {},
     autoprefixer: {},
   },
+<<<<<<< Updated upstream
 }
+=======
+};
+>>>>>>> Stashed changes
