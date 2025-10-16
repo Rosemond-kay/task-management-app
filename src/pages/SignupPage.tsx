@@ -6,7 +6,6 @@ import { Label } from "../components/global/Label";
 import { Alert, AlertDescription } from "../components/global/Alert";
 import { Loader } from "../components/global/Loader";
 import { Lock, Mail, User } from "lucide-react";
-import { Toaster } from "../components/global/toast/Toaster";
 import { useToast } from "../components/global/toast/useToast";
 
 interface SignupPageProps {
@@ -25,7 +24,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
   // Accessing signup function from Zustand auth store
   const signup = useAuthStore((state) => state.signup);
 
-  // ✅ Using our custom toast hook for success notifications
+  // Using our custom toast hook for success notifications
   const { toast } = useToast();
 
   // Handles the signup form submission
@@ -72,10 +71,10 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
           {/* Header Section */}
           <div className="text-center mb-8">
             <div className="inline-flex w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-2xl items-center justify-center mb-4">
-              <span className="text-white text-2xl">DT</span>
+              <span className="text-white text-2xl">T</span>
             </div>
             <h1 className="text-[var(--text-primary)] mb-2">Create an Account</h1>
-            <p className="text-[var(--text-secondary)]">Get started with DigiiTask today</p>
+            <p className="text-[var(--text-secondary)]">Get started with TaskFlow today</p>
           </div>
 
           {/* Signup Form Card */}
