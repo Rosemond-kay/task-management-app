@@ -11,21 +11,7 @@ type AuthView = "login" | "signup" | "reset";
 export default function App() {
   const { isAuthenticated } = useAuthStore();
 
-  const [authView, setAuthView] = useState<AuthView>("signup");
-
-  if (!isAuthenticated) {
-    return (
-      <>
-        {authView === "signup" && <SignupPage onNavigateToLogin={() => setAuthView("login")} />}
-        {authView === "login" && (
-          <div className="min-h-screen flex items-center justify-center">
-            <p>Login page not implemented yet</p>
-          </div>
-        )}
-        <Toaster />
-      </>
-    );
-  }
+  const [authView, setAuthView] = useState<AuthView>("login");
 
   // When user is NOT authenticated, show login/signup pages
   if (!isAuthenticated) {
