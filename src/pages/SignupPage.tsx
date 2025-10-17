@@ -25,7 +25,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
   // Accessing signup function from Zustand auth store
   const signup = useAuthStore((state) => state.signup);
 
-  // ✅ Using our custom toast hook for success notifications
+  // Using our custom toast hook for success notifications
   const { toast } = useToast();
 
   // Handles the signup form submission
