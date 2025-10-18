@@ -18,7 +18,8 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
@@ -46,16 +47,18 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
       return;
     }
 
-    if (name.trim().length < 2) {
-      setError("Name must be at least 2 characters");
+    if (firstName.trim().length < 2 || lastName.trim().length < 2) {
+      setError("First and last name must be at least 2 characters");
       return;
     }
+
+    const fullName = `${firstName.trim()} ${lastName.trim()}`;
 
     setLoading(true);
 
     try {
       // Attempt to create a new user
-      await signup(email, password, name);
+      await signup(email, password, firstName, lastName);
 
       // Show success toast after signup
       toast("success", "Account created successfully! Welcome to DigiiTask!");
@@ -84,16 +87,34 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
           <div className="bg-[var(--bg-paper)] rounded-2xl shadow-sm border border-[var(--border-color)] p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* Name Input */}
+              {/* First Name */}
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="firstName">First Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
                   <Input
-                    id="name"
+                    id="firstName"
                     type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="John"
+                    required
+                    className="pl-10 bg-[var(--bg-main)]"
+                  />
+                </div>
+              </div>
+
+              {/* Last Name */}
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="Doe"
                     required
                     className="pl-10 bg-[var(--bg-main)]"
                   />
