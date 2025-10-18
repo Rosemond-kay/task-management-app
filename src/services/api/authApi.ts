@@ -10,7 +10,17 @@ export const authApi = {
     return { user: safeUser, token: `mock-token-${user.id}-${Date.now()}` };
   },
 
-  async signup({ email, password, name }: { email: string; password: string; name: string }) {
+  async signup({
+    email,
+    password,
+    firstName,
+    lastName,
+  }: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+  }) {
     await delay(1000);
     if (mockDatabase.users.some((u) => u.email === email)) {
       throw new Error("Email already registered");
@@ -19,7 +29,8 @@ export const authApi = {
       id: `user-${Date.now()}`,
       email,
       password,
-      name,
+      firstName,
+      lastName,
       role: "user",
     };
     mockDatabase.users.push(newUser);

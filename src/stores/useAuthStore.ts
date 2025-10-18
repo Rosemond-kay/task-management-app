@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AuthState, User } from "../types/auth.d.ts";
 import { authApi } from "../services/api/authApi";
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -9,6 +10,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
 
+      // Login Function
       login: async (email: string, password: string) => {
         const response = await authApi.login({ email, password });
 
@@ -19,8 +21,14 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      signup: async (email: string, password: string, name: string) => {
-        const response = await authApi.signup({ email, password, name });
+      // Signup Function
+      signup: async (email: string, password: string, firstName: string, lastName: string) => {
+        const response = await authApi.signup({
+          email,
+          password,
+          firstName,
+          lastName,
+        });
 
         set({
           user: response.user,
@@ -29,6 +37,7 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
+      // Logout Function
       logout: () => {
         set({
           user: null,
@@ -37,14 +46,13 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
+      // Update user data in store
       setUser: (user: User) => {
         set({ user });
       },
     }),
     {
       name: "auth-storage",
-
-      // validate the token on rehydration
       partialize: (state) => ({
         user: state.user,
         token: state.token,

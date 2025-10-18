@@ -1,7 +1,8 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: "admin" | "user";
 }
 
@@ -10,7 +11,7 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => void;
   setUser: (user: User) => void;
 }
@@ -23,5 +24,6 @@ export interface LoginCredentials {
 export interface SignupCredentials {
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
 }

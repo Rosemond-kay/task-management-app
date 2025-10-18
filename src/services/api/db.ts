@@ -1,9 +1,9 @@
-// src/services/api/mock/db.ts
 export interface MockUser {
   id: string;
   email: string;
   password: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: "admin" | "user";
 }
 
@@ -20,14 +20,16 @@ export let mockDatabase = {
       id: "1",
       email: "admin@taskflow.com",
       password: "admin123",
-      name: "Admin User",
+      firstName: "Admin",
+      lastName: "User",
       role: "admin",
     },
     {
       id: "2",
       email: "user@taskflow.com",
       password: "user123",
-      name: "Regular User",
+      firstName: "Regular",
+      lastName: "User",
       role: "user",
     },
   ] as MockUser[],
