@@ -3,6 +3,7 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string;
   role: "admin" | "user";
 }
 
@@ -26,4 +27,5 @@ export interface SignupCredentials {
   password: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string;
 }

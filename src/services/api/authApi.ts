@@ -5,7 +5,7 @@ export const authApi = {
   async login({ email, password }: { email: string; password: string }) {
     await delay(800);
     const user = mockDatabase.users.find((u) => u.email === email && u.password === password);
-    if (!user) throw new Error("Invalid email or password");
+    if (!user) throw new Error("User Not Found, Sign Up to Register");
     const { password: _, ...safeUser } = user;
     return { user: safeUser, token: `mock-token-${user.id}-${Date.now()}` };
   },

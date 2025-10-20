@@ -14,8 +14,17 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         const response = await authApi.login({ email, password });
 
+        const userWithAvatar: User = {
+          ...response.user,
+          avatarUrl:
+            response.user.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              response.user.firstName + " " + response.user.lastName
+            )}&background=random`, // fallback avatar
+        };
+
         set({
-          user: response.user,
+          user: userWithAvatar,
           token: response.token,
           isAuthenticated: true,
         });
@@ -30,8 +39,17 @@ export const useAuthStore = create<AuthState>()(
           lastName,
         });
 
+        const userWithAvatar: User = {
+          ...response.user,
+          avatarUrl:
+            response.user.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              firstName + " " + lastName
+            )}&background=random`,
+        };
+
         set({
-          user: response.user,
+          user: userWithAvatar,
           token: response.token,
           isAuthenticated: true,
         });
@@ -46,9 +64,18 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      // Update user data in store
+      // Update user data manually
       setUser: (user: User) => {
-        set({ user });
+        set({
+          user: {
+            ...user,
+            avatarUrl:
+              user.avatarUrl ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                user.firstName + " " + user.lastName
+              )}&background=random`,
+          },
+        });
       },
     }),
     {
