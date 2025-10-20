@@ -5,6 +5,7 @@ export interface MockUser {
   firstName: string;
   lastName: string;
   role: "admin" | "user";
+  avatar?: string;
 }
 
 export interface MockTask {
@@ -23,6 +24,7 @@ export let mockDatabase = {
       firstName: "Admin",
       lastName: "User",
       role: "admin",
+      avatar: "https://ui-avatars.com/api/?name=Admin+User&background=random",
     },
     {
       id: "2",
