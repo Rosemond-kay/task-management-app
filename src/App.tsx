@@ -5,6 +5,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+import { Navbar } from "./components/layout/NavBar";
 import { ToastProvider } from "./components/global/toast/Toaster";
 
 type View = "dashboard" | "admin";
@@ -39,6 +40,7 @@ export default function App() {
   // When user IS authenticated, show the main app
   return (
     <div className="min-h-screen bg-[var(--bg-main)] flex flex-col">
+      <Navbar />
       <div className="flex-1">{activeView === "dashboard" && <DashboardPage />}</div>
       <Toaster />
     </div>
