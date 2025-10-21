@@ -4,6 +4,7 @@ import { Toaster } from "./components/global/toast/Toaster";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
+import { AdminPanel } from "./pages/AdminPanel";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { Navbar } from "./components/layout/NavBar";
 import { ToastProvider } from "./components/global/toast/Toaster";
@@ -41,7 +42,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[var(--bg-main)] flex flex-col">
       <Navbar />
-      <div className="flex-1">{activeView === "dashboard" && <DashboardPage />}</div>
+      <div className="flex-1">
+        {activeView === "dashboard" && <DashboardPage />}
+        {activeView === "admin" && <AdminPanel />}
+      </div>
       <Toaster />
     </div>
   );
