@@ -5,7 +5,7 @@ import { TaskModal } from "../components/tasks/TaskModal";
 import type { Task } from "../types/task";
 import { Button } from "../components/global/Button";
 import { Input } from "../components/global/Input";
-import { Plus, Search, Calendar, Clock, Edit2, Trash2 } from "lucide-react";
+import { Plus, Search, Calendar, Clock, Edit2, Trash2, CheckCircle } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from "../components/tasks/Dialog";
 import Badge from "../components/tasks/Badge";
-import { formatDate, isOverdue } from "../utils/formatDate";
+import { formatDate, isOverdue, formatCompletedAt } from "../utils/formatDate";
 
 import { useToast } from "../components/global/toast/useToast";
 import { Toaster } from "../components/global/toast/Toaster";
@@ -167,6 +167,7 @@ export const DashboardPage: React.FC = () => {
                 <TableHead>Task</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Due Date</TableHead>
+                <TableHead>Completed At</TableHead>
                 <TableHead>Updated</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -222,6 +223,22 @@ export const DashboardPage: React.FC = () => {
                         </div>
                       </TableCell>
                       <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          {task.completedAt && (
+                            <CheckCircle className="w-3.5 h-3.5 text-[var(--color-success)]" />
+                          )}
+                          <span
+                            className={
+                              task.completedAt
+                                ? "text-[var(--color-success)]"
+                                : "text-[var(--text-secondary)]"
+                            }
+                          >
+                            {formatCompletedAt(task.completedAt)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                           <Clock className="w-3.5 h-3.5" />
                           <span>{new Date(task.updatedAt).toLocaleDateString()}</span>
@@ -254,7 +271,7 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modals and Dialogs */}
+      {/* Task Create/Edit Modal */}
       <TaskModal
         task={selectedTask}
         open={modalOpen}
@@ -264,6 +281,7 @@ export const DashboardPage: React.FC = () => {
         mode={modalMode}
       />
 
+      {/* Task View Dialog */}
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
@@ -285,6 +303,7 @@ export const DashboardPage: React.FC = () => {
                 </Badge>
               </div>
 
+              {/* Description */}
               {taskToView.description && (
                 <div>
                   <h4 className="text-[var(--text-secondary)] mb-2">Description</h4>
@@ -292,6 +311,7 @@ export const DashboardPage: React.FC = () => {
                 </div>
               )}
 
+              {/* Metadata */}
               <div className="grid grid-cols-2 gap-4 pt-4 border-t border-[var(--border-color)]">
                 <div>
                   <div className="text-sm text-[var(--text-secondary)] mb-1">Due Date</div>
@@ -330,6 +350,7 @@ export const DashboardPage: React.FC = () => {
                 </div>
               </div>
 
+              {/* Actions */}
               <div className="flex gap-3 pt-4 border-t border-[var(--border-color)]">
                 <Button
                   onClick={() => {
@@ -359,6 +380,7 @@ export const DashboardPage: React.FC = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -105,9 +105,24 @@ export const useTaskStore = create<TaskState>((set, get) => ({
       await new Promise((resolve) => setTimeout(resolve, 300));
 
       set((state) => ({
-        tasks: state.tasks.map((task) =>
-          task.id === id ? { ...task, ...updates, updatedAt: new Date().toISOString() } : task
-        ),
+        tasks: state.tasks.map((task) => {
+          if (task.id === id) {
+            const updatedTask = { ...task, ...updates, updatedAt: new Date().toISOString() };
+
+            // If status is changing to 'done' and completedAt is not set, set it
+            if (updates.status === "done" && task.status !== "done") {
+              updatedTask.completedAt = new Date().toISOString();
+            }
+
+            // If status is changing from 'done' to something else, clear completedAt
+            if (updates.status && updates.status !== "done" && task.status === "done") {
+              updatedTask.completedAt = undefined;
+            }
+
+            return updatedTask;
+          }
+          return task;
+        }),
         loading: false,
       }));
     } catch (error) {
