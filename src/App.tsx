@@ -6,6 +6,7 @@ import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
+
 import { Navbar } from "./components/layout/NavBar";
 import { ToastProvider } from "./components/global/toast/Toaster";
 
@@ -14,7 +15,7 @@ type AuthView = "login" | "signup" | "reset";
 
 export default function App() {
   const { isAuthenticated } = useAuthStore();
-  const [activeView] = useState<View>("dashboard");
+  const [activeView, setActiveView] = useState<View>("dashboard");
   const [authView, setAuthView] = useState<AuthView>("login");
 
   // When user is NOT authenticated, show login/signup pages
@@ -41,7 +42,7 @@ export default function App() {
   // When user IS authenticated, show the main app
   return (
     <div className="min-h-screen bg-[var(--bg-main)] flex flex-col">
-      <Navbar />
+      <Navbar activeView={activeView} onViewChange={setActiveView} />
       <div className="flex-1">
         {activeView === "dashboard" && <DashboardPage />}
         {activeView === "admin" && <AdminPanel />}
