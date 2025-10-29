@@ -9,6 +9,7 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 
 import { Navbar } from "./components/layout/NavBar";
 import { ToastProvider } from "./components/global/toast/Toaster";
+import { Footer } from "./components/layout/Footer";
 
 type View = "dashboard" | "admin";
 type AuthView = "login" | "signup" | "reset";
@@ -47,6 +48,7 @@ export default function App() {
         {activeView === "dashboard" && <DashboardPage />}
         {activeView === "admin" && <AdminPanel />}
       </div>
+      <Footer />
       <Toaster />
     </div>
   );

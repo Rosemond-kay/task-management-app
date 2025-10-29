@@ -6,7 +6,7 @@ import { Label } from "../components/global/Label";
 import { Alert, AlertDescription } from "../components/global/Alert";
 import { Loader } from "../components/global/Loader";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
-import { useToast } from "../components/global/toast/useToast"; // ← Changed import
+import { useToast } from "../components/global/toast/useToast";
 import { ToastProvider } from "../components/global/toast/Toaster";
 
 interface LoginPageProps {
@@ -23,7 +23,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
 
   const login = useAuthStore((state) => state.login);
 
-  // Use the toast hook (assumes useToast is exported from a separate file)
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,7 +48,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="inline-flex w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-2xl items-center justify-center mb-4">
-              <span className="text-white text-2xl">DT</span>
+              <span className="text-white text-2xl">T</span>
             </div>
             <h1 className="text-[var(--text-primary)] mb-2">Welcome to TaskFlow</h1>
             <p className="text-[var(--text-secondary)]">Sign in to manage your tasks</p>
