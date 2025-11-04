@@ -1,13 +1,14 @@
 import React, { useState } from "react";
-import { useAuthStore } from "../stores/useAuthStore";
+//import { useAuthStore } from "../stores/useAuthStore";
 import { Button } from "../components/global/Button";
 import { Input } from "../components/global/Input";
 import { Label } from "../components/global/Label";
 import { Alert, AlertDescription } from "../components/global/Alert";
 import { Loader } from "../components/global/Loader";
 import { Lock, Mail, User, Eye, EyeOff } from "lucide-react";
-import { Toaster } from "../components/global/toast/Toaster";
+
 import { useToast } from "../components/global/toast/useToast";
+import { supabase } from "../lib/supabaseClient";
 
 interface SignupPageProps {
   onNavigateToLogin: () => void;
@@ -26,7 +27,7 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
   const [loading, setLoading] = useState(false);
 
   // Accessing signup function from Zustand auth store
-  const signup = useAuthStore((state) => state.signup);
+  //const signup = useAuthStore((state) => state.signup);
 
   // Using our custom toast hook for success notifications
   const { toast } = useToast();
@@ -52,13 +53,26 @@ export const SignupPage: React.FC<SignupPageProps> = ({ onNavigateToLogin }) => 
       return;
     }
 
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
-
     setLoading(true);
 
     try {
-      // Attempt to create a new user
-      await signup(email, password, firstName, lastName);
+      // Call Supabase sign-up method
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          },
+          emailRedirectTo: `${window.location.origin}/auth/callback`, // optional redirect after email confirmation
+        },
+      });
+
+      if (error) {
+        setError(error.message);
+        return;
+      }
 
       // Show success toast after signup
       toast("success", "Account created successfully! Welcome to DigiiTask!");

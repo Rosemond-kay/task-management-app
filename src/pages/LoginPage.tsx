@@ -8,6 +8,7 @@ import { Loader } from "../components/global/Loader";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { useToast } from "../components/global/toast/useToast";
 import { ToastProvider } from "../components/global/toast/Toaster";
+//import { supabase } from "../lib/supabaseClient";
 
 interface LoginPageProps {
   onNavigateToSignup: () => void;
