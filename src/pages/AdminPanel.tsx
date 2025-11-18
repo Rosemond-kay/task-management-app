@@ -42,7 +42,7 @@ import { Calendar, Clock, CheckCircle } from "lucide-react";
 
 const statusColors = {
   todo: "bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/20",
-  "in-progress":
+  in_progress:
     "bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20",
   done: "bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20",
 };
@@ -59,7 +59,8 @@ export const AdminPanel: React.FC = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [taskToView, setTaskToView] = useState<Task | null>(null);
 
-  const { toast } = useToast();
+  // const { toast } = useToast();
+  const { success, error } = useToast();
   // Load users on component mount
   useEffect(() => {
     loadUsers();
@@ -69,8 +70,9 @@ export const AdminPanel: React.FC = () => {
     try {
       const allUsers = await dbApi.getAllUsers();
       setUsers(allUsers);
-    } catch (error) {
-      toast("error", "Failed to load users");
+    } catch (err) {
+      console.error(err);
+      error("Failed to load users");
     }
   };
 
@@ -116,11 +118,12 @@ export const AdminPanel: React.FC = () => {
     try {
       await dbApi.deleteUser(userToDelete);
       await loadUsers(); // Reload users list
-      toast("success", "User deleted successfully");
+      success("User deleted successfully");
       setDeleteUserDialogOpen(false);
       setUserToDelete(null);
-    } catch (error) {
-      toast("error", "Failed to delete user");
+    } catch (err) {
+      console.error(err);
+      error("Failed to delete user");
     }
   };
 
@@ -135,11 +138,12 @@ export const AdminPanel: React.FC = () => {
 
     try {
       await deleteTask(taskToDelete);
-      toast("success", "Task deleted successfully");
+      success("Task deleted successfully");
       setDeleteTaskDialogOpen(false);
       setTaskToDelete(null);
-    } catch (error) {
-      toast("error", "Failed to delete task");
+    } catch (err) {
+      console.error(err);
+       error("Failed to delete task");
     }
   };
 
@@ -309,7 +313,7 @@ export const AdminPanel: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={statusColors[task.status]}>
-                              {task.status === "in-progress"
+                              {task.status === "in_progress"
                                 ? "In Progress"
                                 : task.status === "todo"
                                   ? "To Do"
@@ -424,7 +428,7 @@ export const AdminPanel: React.FC = () => {
                   <h3 className="text-[var(--text-primary)] mb-2">{taskToView.title}</h3>
                 </div>
                 <Badge variant="outline" className={statusColors[taskToView.status]}>
-                  {taskToView.status === "in-progress"
+                  {taskToView.status === "in_progress"
                     ? "In Progress"
                     : taskToView.status === "todo"
                       ? "To Do"

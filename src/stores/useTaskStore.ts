@@ -1,150 +1,203 @@
 import { create } from "zustand";
-import type { Task, TaskState, TaskStatus } from "../types/task";
+import type { TaskState, TaskStatus } from "../types/task";
 import { useAuthStore } from "./useAuthStore";
+import { supabase } from "../lib/supabaseClient";
 
-// Mock initial tasks
-const mockTasks: Task[] = [
-  {
-    id: "1",
-    title: "Design new landing page",
-    description: "Create a modern landing page design with hero section and features",
-    status: "todo",
-    dueDate: "2025-10-20",
-    userId: "2",
-    createdAt: "2025-10-10T10:00:00Z",
-    updatedAt: "2025-10-10T10:00:00Z",
-  },
-  {
-    id: "2",
-    title: "Implement authentication",
-    description: "Add login and registration functionality",
-    status: "in-progress",
-    dueDate: "2025-10-18",
-    userId: "2",
-    createdAt: "2025-10-09T14:30:00Z",
-    updatedAt: "2025-10-14T09:15:00Z",
-  },
-  {
-    id: "3",
-    title: "Setup database schema",
-    description: "Design and implement the database schema for the application",
-    status: "done",
-    dueDate: "2025-10-15",
-    userId: "2",
-    createdAt: "2025-10-08T11:20:00Z",
-    updatedAt: "2025-10-13T16:45:00Z",
-  },
-  {
-    id: "4",
-    title: "Write API documentation",
-    description: "Document all API endpoints with examples",
-    status: "todo",
-    dueDate: "2025-10-25",
-    userId: "1",
-    createdAt: "2025-10-11T08:00:00Z",
-    updatedAt: "2025-10-11T08:00:00Z",
-  },
-  {
-    id: "5",
-    title: "Code review sprint 3",
-    description: "Review pull requests from the last sprint",
-    status: "in-progress",
-    dueDate: "2025-10-16",
-    userId: "1",
-    createdAt: "2025-10-12T13:00:00Z",
-    updatedAt: "2025-10-14T10:30:00Z",
-  },
-];
+// Status mappers between UI and DB
+const toDbStatus = (status?: string) =>
+  status === "todo" ? "To Do" : status === "in_progress" ? "In Progress" : status === "done" ? "Done" : status;
+
+const fromDbStatus = (status?: string) =>
+  status === "To Do" ? "todo" : status === "In Progress" ? "in_progress" : status === "Done" ? "done" : (status as any);
 
 export const useTaskStore = create<TaskState>((set, get) => ({
-  tasks: mockTasks,
+  tasks: [],
   loading: false,
   error: null,
 
+  // Map UI status <-> DB status
+  // UI: 'todo' | 'in_progress' | 'done'
+  // DB: 'To Do' | 'In Progress' | 'Done'
+  
+  
+  
+  
+
+  //  FETCH TASKS (User-specific or Admin)
   fetchTasks: async () => {
     set({ loading: true, error: null });
+    const user = useAuthStore.getState().user;
+
+    if (!user) {
+      set({ loading: false, error: "User not authenticated" });
+      return;
+    }
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      set({ loading: false });
-    } catch (error) {
+      let query = supabase.from("tasks").select("*").order("created_at", { ascending: false });
+
+      // Non-admin users see only their tasks
+      if (user.role !== "admin") {
+        query = query.eq("user_id", user.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const normalized = (data || []).map((t: any) => ({
+        id: t.id,
+        title: t.title,
+        description: t.description ?? "",
+        status: fromDbStatus(t.status),
+        dueDate: t.due_date ?? null,
+        completedAt: t.completed_at ?? null,
+        createdAt: t.created_at ?? null,
+        updatedAt: t.updated_at ?? null,
+        userId: t.user_id,
+      }));
+
+      set({ tasks: normalized, loading: false });
+    } catch (err: any) {
+      console.error("Fetch error:", err.message);
       set({ error: "Failed to fetch tasks", loading: false });
     }
   },
 
+  // ADD TASK
   addTask: async (taskData) => {
     const user = useAuthStore.getState().user;
-    if (!user) return;
+    if (!user) throw new Error("User not authenticated");
+
 
     set({ loading: true, error: null });
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const newTask: Task = {
-        ...taskData,
-        id: `task-${Date.now()}`,
-        userId: user.id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+    try {
+      const dbStatus = toDbStatus(taskData.status) || "To Do";
+      const insertPayload: any = {
+        title: taskData.title,
+        description: taskData.description ?? "",
+        status: dbStatus,
+        due_date: taskData.dueDate,
+        user_id: user.id,
+      };
+  
+      // Set completed_at if status is "Done" on creation
+      if (dbStatus === "Done") {
+        insertPayload.completed_at = new Date().toISOString();
+      }
+  
+      const { data, error } = await supabase
+        .from("tasks")
+        .insert([insertPayload])
+        .select()
+        .single();
+  
+
+      if (error) throw error;
+
+      const created = {
+        id: data.id,
+        title: data.title,
+        description: data.description ?? "",
+        status: fromDbStatus(data.status),
+        dueDate: data.due_date ?? null,
+        completedAt: data.completed_at ?? null,
+        createdAt: data.created_at ?? null,
+        updatedAt: data.updated_at ?? null,
+        userId: data.user_id,
       };
 
       set((state) => ({
-        tasks: [...state.tasks, newTask],
+        tasks: [created, ...state.tasks],
         loading: false,
       }));
-    } catch (error) {
+    } catch (err: any) {
+      console.error("Add error:", err.message);
       set({ error: "Failed to add task", loading: false });
+      throw err;
     }
   },
 
+  // UPDATE TASK
   updateTask: async (id, updates) => {
     set({ loading: true, error: null });
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const dbStatus = toDbStatus(updates.status as any);
+      const updatePayload: any = {
+        title: updates.title,
+        description: updates.description,
+        status: dbStatus,
+        due_date: updates.dueDate,
+        updated_at: new Date().toISOString(),
+      };
+  
+      // If status is being changed, update completed_at accordingly
+      if (updates.status !== undefined) {
+        if (dbStatus === "Done") {
+          updatePayload.completed_at = new Date().toISOString();
+        } else {
+          // Clear completed_at if status is changed away from "Done"
+          updatePayload.completed_at = null;
+        }
+      }
+
+      const { data, error } = await supabase
+        .from("tasks")
+        .update(updatePayload)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const updated = {
+        id: data.id,
+        title: data.title,
+        description: data.description ?? "",
+        status: fromDbStatus(data.status),
+        dueDate: data.due_date ?? null,
+        completedAt: data.completed_at ?? null,
+        createdAt: data.created_at ?? null,
+        updatedAt: data.updated_at ?? null,
+        userId: data.user_id,
+      };
 
       set((state) => ({
-        tasks: state.tasks.map((task) => {
-          if (task.id === id) {
-            const updatedTask = { ...task, ...updates, updatedAt: new Date().toISOString() };
-
-            // If status is changing to 'done' and completedAt is not set, set it
-            if (updates.status === "done" && task.status !== "done") {
-              updatedTask.completedAt = new Date().toISOString();
-            }
-
-            // If status is changing from 'done' to something else, clear completedAt
-            if (updates.status && updates.status !== "done" && task.status === "done") {
-              updatedTask.completedAt = undefined;
-            }
-
-            return updatedTask;
-          }
-          return task;
-        }),
+        tasks: state.tasks.map((t) => (t.id === id ? { ...t, ...updated } : t)),
         loading: false,
       }));
-    } catch (error) {
-      set({ error: "Failed to update task", loading: false });
-    }
+    
+  } catch (err: any) {
+    console.error("Delete error:", err.message);
+    set({ error: "Failed to delete task", loading: false });
+    throw err; 
+  }
   },
 
+
+  
+
+  //  DELETE TASK
   deleteTask: async (id) => {
     set({ loading: true, error: null });
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      const { error } = await supabase.from("tasks").delete().eq("id", id);
+      if (error) throw error;
 
       set((state) => ({
         tasks: state.tasks.filter((task) => task.id !== id),
         loading: false,
       }));
-    } catch (error) {
+    } catch (err: any) {
+      console.error("Delete error:", err.message);
       set({ error: "Failed to delete task", loading: false });
+      throw err;
     }
   },
 
+  //  FILTER BY STATUS
   getTasksByStatus: (status: TaskStatus) => {
     const user = useAuthStore.getState().user;
     const tasks = get().tasks;
@@ -156,6 +209,7 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     return tasks.filter((task) => task.status === status && task.userId === user?.id);
   },
 
+  //  SEARCH
   searchTasks: (query: string) => {
     const user = useAuthStore.getState().user;
     const tasks = get().tasks;
@@ -168,8 +222,8 @@ export const useTaskStore = create<TaskState>((set, get) => ({
 
     return filteredTasks.filter(
       (task) =>
-        task.title.toLowerCase().includes(lowerQuery) ||
-        task.description.toLowerCase().includes(lowerQuery)
+        task.title?.toLowerCase().includes(lowerQuery) ||
+        task.description?.toLowerCase().includes(lowerQuery)
     );
   },
 }));

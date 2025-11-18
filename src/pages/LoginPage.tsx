@@ -7,8 +7,9 @@ import { Alert, AlertDescription } from "../components/global/Alert";
 import { Loader } from "../components/global/Loader";
 import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { useToast } from "../components/global/toast/useToast";
-import { ToastProvider } from "../components/global/toast/Toaster";
-//import { supabase } from "../lib/supabaseClient";
+import bg from "../assets/bk-img.png";
+import { Toaster } from "../components/global/toast/Toaster";
+import { supabase } from "../lib/supabaseClient";
 
 interface LoginPageProps {
   onNavigateToSignup: () => void;
@@ -23,8 +24,22 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
   const [loading, setLoading] = useState(false);
 
   const login = useAuthStore((state) => state.login);
+  const { success, error: errorToast } = useToast();
 
-  const { toast } = useToast();
+  const handleGoogleSignIn = async () => {
+    try {
+      await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: { prompt: "select_account" },
+        },
+      });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Google sign-in failed";
+      errorToast(message);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,10 +48,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
 
     try {
       await login(email, password);
-      toast("success", "Welcome back!");
+      success("Welcome back!");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Login failed";
-      toast("error", message);
+      errorToast(message);
       setError(message);
     } finally {
       setLoading(false);
@@ -44,19 +59,54 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
   };
 
   return (
-    <ToastProvider>
-      <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
+    <>
+      <Toaster />
+      <div
+        className="min-h-screen bg-[var(--bg-main)] bg-cover bg-center flex items-center justify-center p-4"
+        style={{ backgroundImage: `url(${bg})` }}
+      >
+        <div className="w-full max-w-md bg">
           <div className="text-center mb-8">
             <div className="inline-flex w-16 h-16 bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-primary-hover)] rounded-2xl items-center justify-center mb-4">
               <span className="text-white text-2xl">T</span>
             </div>
-            <h1 className="text-[var(--text-primary)] mb-2">Welcome to TaskFlow</h1>
-            <p className="text-[var(--text-secondary)]">Sign in to manage your tasks</p>
+            <h1 className="text-white text-3xl font-semibold mb-2 tracking-wide uppercase">
+              Welcome to TaskFlow
+            </h1>
+            <p className="text-black">Sign in to manage your tasks</p>
           </div>
 
           <div className="bg-[var(--bg-paper)] rounded-2xl shadow-sm border border-[var(--border-color)] p-8">
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  className="w-full bg-white text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+                      <path
+                        fill="#FFC107"
+                        d="M43.6 20.5H42V20H24v8h11.3C34 31.1 29.6 34 24 34c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.8 4.1 29.7 2 24 2 12.9 2 4 10.9 4 22s8.9 20 20 20 18.7-8.1 18.7-20c0-1.3-.1-2.2-.3-3.5z"
+                      />
+                      <path
+                        fill="#FF3D00"
+                        d="M6.3 14.7L13 19.2C14.8 14.9 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.8 4.1 29.7 2 24 2 16.1 2 9.5 6.5 6.3 14.7z"
+                      />
+                      <path
+                        fill="#4CAF50"
+                        d="M24 42c5.5 0 10.5-2.1 14.2-5.5l-6.5-5.3C29.6 34 27 35 24 35c-5.6 0-10.3-3.8-11.9-9l-6.7 5.2C7.6 36.9 15.1 42 24 42z"
+                      />
+                      <path
+                        fill="#1976D2"
+                        d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.2-3.6 5.6-6.6 7.2l6.5 5.3C38.1 37.6 42 30.9 42 22c0-1.3-.1-2.2-.3-3.5z"
+                      />
+                    </svg>
+                    Sign in with Google
+                  </span>
+                </Button>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -123,20 +173,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
                   Sign up
                 </button>
               </p>
+
+              <p className="text-center text-sm text-[var(--text-secondary)] mt-6">
+                <button
+                  type="button"
+                  onClick={onNavigateToReset}
+                  className="text-[var(--color-primary)] hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </p>
             </div>
           </div>
-
-          <p className="text-center text-sm text-[var(--text-secondary)] mt-6">
-            <button
-              type="button"
-              onClick={onNavigateToReset}
-              className="text-[var(--color-primary)] hover:underline"
-            >
-              Forgot password?
-            </button>
-          </p>
         </div>
       </div>
-    </ToastProvider>
+    </>
   );
-};
+}; 

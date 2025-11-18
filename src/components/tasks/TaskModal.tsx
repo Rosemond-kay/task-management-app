@@ -117,7 +117,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 }
                 options={[
                   { label: "To Do", value: "todo" },
-                  { label: "In Progress", value: "in-progress" },
+                  { label: "In Progress", value: "in_progress" },
                   { label: "Done", value: "done" },
                 ]}
                 placeholder="Select status"

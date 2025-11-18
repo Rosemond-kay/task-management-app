@@ -22,10 +22,10 @@ export const mockDatabase: {
   users: [
     {
       id: "1",
-      email: "admin@taskflow.com",
-      password: "admin123",
-      firstName: "Admin",
-      lastName: "User",
+      email: "amprosemond@gmail.com",
+      password: "rosemond",
+      firstName: "Rosemond",
+      lastName: "Ampomah",
       role: "admin",
       avatar: "https://ui-avatars.com/api/?name=Admin+User&background=random",
     },
@@ -98,14 +98,7 @@ export const resetMockDatabase = () => {
       lastName: "User",
       role: "admin",
     },
-    {
-      id: "2",
-      email: "user@taskflow.com",
-      password: "user123",
-      firstName: "Regular",
-      lastName: "User",
-      role: "user",
-    },
+
     {
       id: "3",
       email: "admin2@taskflow.com",

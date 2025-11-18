@@ -12,8 +12,9 @@ export interface AuthState {
   token: string | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<{ needsConfirmation: boolean } | void>;
   logout: () => void;
+  restoreSession: () => Promise<void>;
   setUser: (user: User) => void;
 }
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect,useState, useMemo } from "react";
 import { useTaskStore } from "../stores/useTaskStore";
 import { useAuthStore } from "../stores/useAuthStore";
 import { TaskModal } from "../components/tasks/TaskModal";
@@ -35,11 +35,12 @@ import Badge from "../components/tasks/Badge";
 import { formatDate, isOverdue, formatCompletedAt } from "../utils/formatDate";
 
 import { useToast } from "../components/global/toast/useToast";
+
 import { Toaster } from "../components/global/toast/Toaster";
 
 const statusColors = {
   todo: "bg-[var(--color-info)]/10 text-[var(--color-info)] border-[var(--color-info)]/20",
-  "in-progress":
+  in_progress:
     "bg-[var(--color-warning)]/10 text-[var(--color-warning)] border-[var(--color-warning)]/20",
   done: "bg-[var(--color-success)]/10 text-[var(--color-success)] border-[var(--color-success)]/20",
 };
@@ -54,7 +55,16 @@ const getGreeting = () => {
 export const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
   const { addTask, updateTask, deleteTask, searchTasks } = useTaskStore();
-  const { toast } = useToast(); //  toast hook
+  
+  const { success, error } = useToast(); //  toast hook
+
+  const fetchTasks = useTaskStore((state) => state.fetchTasks);
+
+  useEffect(() => {
+    if (user) {
+      fetchTasks();
+    }
+  }, [user, fetchTasks]);
 
   const allTasks = useTaskStore((state) => state.tasks);
   const tasks = useMemo(() => {
@@ -94,23 +104,36 @@ export const DashboardPage: React.FC = () => {
 
   const handleDeleteConfirm = async () => {
     if (taskToDelete) {
-      await deleteTask(taskToDelete);
-      toast("success", "Task created successfully");
-      setDeleteDialogOpen(false);
-      setTaskToDelete(null);
+      try {
+        await deleteTask(taskToDelete);
+        success("Task deleted successfully");; // Fixed message
+        setDeleteDialogOpen(false);
+        setTaskToDelete(null);
+      } catch (err) {
+        error("Failed to delete task");
+      }
     }
   };
 
   const handleSaveTask = async (
-    taskData: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">
+    taskData: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId" | "completedAt">
   ) => {
-    await addTask(taskData);
-    toast("success", "Task created successfully");
+    try {
+      await addTask(taskData);
+      success("Task created successfully");
+      setModalOpen(false); // Close modal after successful save
+    } catch (err) {
+       error("Failed to create task");
+    }
   };
-
   const handleUpdateTask = async (id: string, updates: Partial<Task>) => {
-    await updateTask(id, updates);
-    toast("success", "Task updated successfully");
+    try {
+      await updateTask(id, updates);
+      success("Task updated successfully");
+      setModalOpen(false); // Close modal after successful update
+    } catch (err) {
+       error("Failed to update task");
+    }
   };
 
   const handleRowClick = (task: Task) => {
@@ -203,7 +226,7 @@ export const DashboardPage: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={statusColors[task.status]}>
-                          {task.status === "in-progress"
+                          {task.status === "in_progress"
                             ? "In Progress"
                             : task.status === "todo"
                               ? "To Do"
@@ -295,7 +318,7 @@ export const DashboardPage: React.FC = () => {
                   <h3 className="text-[var(--text-primary)] mb-2">{taskToView.title}</h3>
                 </div>
                 <Badge variant="outline" className={statusColors[taskToView.status]}>
-                  {taskToView.status === "in-progress"
+                  {taskToView.status === "in_progress"
                     ? "In Progress"
                     : taskToView.status === "todo"
                       ? "To Do"

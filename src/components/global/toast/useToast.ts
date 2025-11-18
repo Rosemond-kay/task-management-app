@@ -1,31 +1,71 @@
-import { useCallback } from "react";
+import { toast } from "sonner";
 
-// Define the types of toast messages you can show
-export type ToastType = "success" | "error" | "info" | "warning";
-
-// Simple toast interface
-export interface Toast {
-  id: number;
-  type: ToastType;
-  message: string;
+export interface ToastOptions {
+  title?: string;
+  description?: string;
+  action?: { label: string; onClick: () => void };
+  duration?: number;
 }
 
-//a global event system for simplicity so that any component can trigger toasts.
-const toastEvent = new EventTarget();
+export const useToast = () => {
+  const makeOpts = (opt: string | ToastOptions) =>
+    typeof opt === "string"
+      ? { message: opt }
+      : {
+          title: opt.title,
+          description: opt.description,
+          action: opt.action,
+          duration: opt.duration,
+        };
 
-// Custom hook: useToast()
-export function useToast() {
-  // Function to trigger a toast anywhere in the app
-  const toast = useCallback((type: ToastType, message: string) => {
-    const event = new CustomEvent("toast", {
-      detail: {
-        id: Date.now(),
-        type,
-        message,
-      } as Toast,
-    });
-    toastEvent.dispatchEvent(event);
-  }, []);
+  return {
+    success: (opt: string | ToastOptions) => {
+      const o = makeOpts(opt);
+      return typeof opt === "string"
+        ? toast.success(opt)
+        : toast.success(o.title || o.description || "Success", {
+            description: o.description,
+            action: o.action,
+            duration: o.duration,
+          });
+    },
 
-  return { toast, toastEvent };
-}
+    error: (opt: string | ToastOptions) => {
+      const o = makeOpts(opt);
+      return typeof opt === "string"
+        ? toast.error(opt)
+        : toast.error(o.title || o.description || "Error", {
+            description: o.description,
+            action: o.action,
+            duration: o.duration,
+          });
+    },
+
+    info: (opt: string | ToastOptions) => {
+      const o = makeOpts(opt);
+      return typeof opt === "string"
+        ? toast.message(opt)
+        : toast.message(o.title || o.description || "Info", {
+            description: o.description,
+            action: o.action,
+            duration: o.duration,
+          });
+    },
+
+    warning: (opt: string | ToastOptions) => {
+      const o = makeOpts(opt);
+      return typeof opt === "string"
+        ? toast.message(opt)
+        : toast.message(o.title || o.description || "Warning", {
+            description: o.description,
+            action: o.action,
+            duration: o.duration,
+          });
+    },
+
+    loading: (message: string) => toast.loading(message),
+    dismiss: (id?: string | number) => toast.dismiss(id),
+    promise: <T>(p: Promise<T>, msgs: { loading: string; success: string; error: string }) =>
+      toast.promise(p, msgs),
+  };
+};

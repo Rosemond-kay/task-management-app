@@ -5,7 +5,7 @@ import { Label } from "../components/global/Label";
 import { Alert, AlertDescription } from "../components/global/Alert";
 import { Loader } from "../components/global/Loader";
 import { Mail, Lock, CheckCircle2, ArrowLeft, Eye, EyeOff } from "lucide-react";
-import { useToast } from "../components/global/toast/Toaster";
+import { useToast } from "../components/global/toast/useToast";
 
 import { authApi } from "../services/api/authApi";
 
@@ -28,7 +28,7 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
   const [generatedCode, setGeneratedCode] = useState("");
 
   //  initialize the toast context hook
-  const { addToast } = useToast();
+  const { success, error: errorToast } = useToast();
 
   // handle email submit
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -42,10 +42,10 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
       setStep("code");
 
       // toast.success() from addToast()
-      addToast("Reset code sent to your email!", "success");
+      success("Reset code sent to your email!");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to send reset code");
-      addToast("Failed to send reset code", "error");
+      setError("Failed to send reset code");
     } finally {
       setLoading(false);
     }
@@ -58,12 +58,12 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
 
     if (resetCode !== generatedCode) {
       setError("Invalid reset code. Please check and try again.");
-      addToast("Invalid reset code", "error");
+
       return;
     }
 
     setStep("password");
-    addToast("Code verified successfully!", "success");
+    success("Code verified successfully!");
   };
 
   // handle password reset
@@ -73,13 +73,13 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
 
     if (newPassword !== confirmPassword) {
       setError("Passwords do not match");
-      addToast("Passwords do not match", "error");
+
       return;
     }
 
     if (newPassword.length < 6) {
       setError("Password must be at least 6 characters");
-      addToast("Password too short", "error");
+
       return;
     }
 
@@ -88,10 +88,9 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
     try {
       await authApi.resetPassword(email, newPassword);
       setStep("success");
-      addToast("Password reset successfully!", "success");
+      success("Password reset successfully!");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to reset password");
-      addToast("Failed to reset password", "error");
     } finally {
       setLoading(false);
     }

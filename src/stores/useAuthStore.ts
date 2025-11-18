@@ -57,22 +57,35 @@ export const useAuthStore = create<AuthState>()(
         //  Supabase may require email confirmation — session may be null
         const supaUser = data.user;
 
-        const user: User = {
-          id: supaUser?.id || "",
-          email: supaUser?.email || email,
-          firstName,
-          lastName,
-          avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            `${firstName} ${lastName}`
-          )}&background=random`,
-          role: "user",
-        };
-
-        set({
-          user,
-          token: data.session?.access_token || null,
-          isAuthenticated: !!data.session,
-        });
+        if (data.session) {
+          // Session exists (no email confirmation required)
+          const user: User = {
+            id: supaUser?.id || "",
+            email: supaUser?.email || email,
+            firstName,
+            lastName,
+            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              `${firstName} ${lastName}`
+            )}&background=random`,
+            role: "user",
+          };
+      
+          set({
+            user,
+            token: data.session.access_token,
+            isAuthenticated: true,
+          });
+          return { needsConfirmation: false };
+        } else {
+          // Email confirmation required - user needs to confirm before getting session
+          // Don't set isAuthenticated to true yet
+          set({
+            user: null,
+            token: null,
+            isAuthenticated: false,
+          });
+          return { needsConfirmation: true };
+  }
       },
 
       //  LOGOUT FUNCTION
@@ -90,12 +103,18 @@ export const useAuthStore = create<AuthState>()(
       restoreSession: async () => {
         const { data, error } = await supabase.auth.getSession();
         if (error) {
-          console.error("Session restore failed:", error.message);
+          const msg = (error as { message?: string })?.message ?? String(error);
+          console.error("Session restore failed:", msg);
+          set({ user: null, token: null, isAuthenticated: false });
           return;
         }
 
         const session = data.session;
-        if (!session) return;
+        if (!session) {
+          // No active session; ensure we clear any persisted auth state
+          set({ user: null, token: null, isAuthenticated: false });
+          return;
+        }
 
         const supaUser = session.user;
         const user: User = {

@@ -1,4 +1,4 @@
-export type TaskStatus = "todo" | "in-progress" | "done";
+export type TaskStatus = "todo" | "in_progress" | "done";
 
 export interface Task {
   id: string;
@@ -17,7 +17,9 @@ export interface TaskState {
   loading: boolean;
   error: string | null;
   fetchTasks: () => Promise<void>;
-  addTask: (task: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId">) => Promise<void>;
+  addTask: (
+    task: Omit<Task, "id" | "createdAt" | "updatedAt" | "userId" | "completedAt">
+  ) => Promise<void>;
   updateTask: (id: string, updates: Partial<Task>) => Promise<void>;
   deleteTask: (id: string) => Promise<void>;
   getTasksByStatus: (status: TaskStatus) => Task[];

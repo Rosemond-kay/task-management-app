@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useAuthStore } from "./stores/useAuthStore";
-import { Toaster, ToastProvider } from "./components/global/toast/Toaster";
+import { Toaster } from "./components/global/toast/Toaster";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-import { supabase } from "./lib/supabaseClient";
+
 import { Navbar } from "./components/layout/NavBar";
 import { Footer } from "./components/layout/Footer";
 
@@ -14,84 +14,31 @@ type View = "dashboard" | "admin";
 type AuthView = "login" | "signup" | "reset";
 
 export default function App() {
-  const { isAuthenticated, setUser, logout } = useAuthStore();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [authView, setAuthView] = useState<AuthView>("login");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getSession = async () => {
+    const init = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const persistedState = localStorage.getItem("auth-storage");
+        if (persistedState) {
+          const parsed = JSON.parse(persistedState);
 
-        if (error) {
-          console.error("Error getting session:", error.message);
-          logout();
-          return;
+          if (parsed.state?.isAuthenticated) {
+            useAuthStore.setState({ isAuthenticated: false });
+          }
         }
 
-        const session = data.session;
-
-        if (session?.user) {
-          const { email, user_metadata } = session.user;
-
-          // Set user in Zustand
-          setUser({
-            id: session.user.id,
-            email: email || "",
-            firstName: user_metadata?.firstName || "",
-            lastName: user_metadata?.lastName || "",
-            avatarUrl:
-              user_metadata?.avatarUrl ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                `${user_metadata?.firstName || ""} ${user_metadata?.lastName || ""}`
-              )}&background=random`,
-            role: "user",
-          });
-        } else {
-          logout();
-        }
-      } catch (error) {
-        console.error("Session check failed:", error);
-        logout();
+        await useAuthStore.getState().restoreSession();
       } finally {
-        // Always set loading to false, even if there's an error
         setLoading(false);
       }
     };
-
-    // Initial session check
-    getSession();
-
-    // Listen for changes to the auth state
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        const { email, user_metadata } = session.user;
-
-        setUser({
-          id: session.user.id,
-          email: email || "",
-          firstName: user_metadata?.firstName || "",
-          lastName: user_metadata?.lastName || "",
-          avatarUrl:
-            user_metadata?.avatarUrl ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              `${user_metadata?.firstName || ""} ${user_metadata?.lastName || ""}`
-            )}&background=random`,
-          role: "user",
-        });
-      } else {
-        logout();
-      }
-    });
-
-    // Cleanup listener on unmount
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [setUser, logout]);
+    init();
+    // No auth listener here; it's managed globally in the store
+  }, []);
 
   if (loading) {
     return (
@@ -109,27 +56,28 @@ export default function App() {
   // When user is NOT authenticated, show login/signup pages
   if (!isAuthenticated) {
     return (
-      <ToastProvider>
-        <>
-          {authView === "login" && (
-            <LoginPage
-              onNavigateToSignup={() => setAuthView("signup")}
-              onNavigateToReset={() => setAuthView("reset")}
-            />
-          )}
-          {authView === "signup" && <SignupPage onNavigateToLogin={() => setAuthView("login")} />}
-          {authView === "reset" && (
-            <ResetPasswordPage onNavigateToLogin={() => setAuthView("login")} />
-          )}
-          <Toaster />
-        </>
-      </ToastProvider>
+      <>
+        <Toaster />
+
+        {authView === "login" && (
+          <LoginPage
+            onNavigateToSignup={() => setAuthView("signup")}
+            onNavigateToReset={() => setAuthView("reset")}
+          />
+        )}
+        {authView === "signup" && <SignupPage onNavigateToLogin={() => setAuthView("login")} />}
+        {authView === "reset" && (
+          <ResetPasswordPage onNavigateToLogin={() => setAuthView("login")} />
+        )}
+        {/* <Toaster /> */}
+      </>
     );
   }
 
   // When user IS authenticated, show the main app
   return (
-    <ToastProvider>
+    <>
+      <Toaster />
       <div className="min-h-screen bg-[var(--bg-main)] flex flex-col">
         <Navbar activeView={activeView} onViewChange={setActiveView} />
         <div className="flex-1">
@@ -137,8 +85,8 @@ export default function App() {
           {activeView === "admin" && <AdminPanel />}
         </div>
         <Footer />
-        <Toaster />
+        {/* <Toaster /> */}
       </div>
-    </ToastProvider>
+    </>
   );
 }

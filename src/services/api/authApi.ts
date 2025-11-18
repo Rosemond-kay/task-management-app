@@ -37,7 +37,7 @@ export const authApi = {
     const { password: _, ...safeUser } = newUser;
     return { user: safeUser, token: `mock-token-${newUser.id}-${Date.now()}` };
   },
-  /////////////////////////////////////////////////////////////
+ 
 
   // Request password reset
   async requestPasswordReset(email: string) {
