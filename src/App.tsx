@@ -6,7 +6,6 @@ import { SignupPage } from "./pages/SignupPage";
 import { LoginPage } from "./pages/LoginPage";
 import { AdminPanel } from "./pages/AdminPanel";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
-
 import { Navbar } from "./components/layout/NavBar";
 import { Footer } from "./components/layout/Footer";
 
@@ -15,6 +14,7 @@ type AuthView = "login" | "signup" | "reset";
 
 export default function App() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const restoreSession = useAuthStore((s) => s.restoreSession);
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [authView, setAuthView] = useState<AuthView>("login");
   const [loading, setLoading] = useState(true);
@@ -22,23 +22,14 @@ export default function App() {
   useEffect(() => {
     const init = async () => {
       try {
-        const persistedState = localStorage.getItem("auth-storage");
-        if (persistedState) {
-          const parsed = JSON.parse(persistedState);
-
-          if (parsed.state?.isAuthenticated) {
-            useAuthStore.setState({ isAuthenticated: false });
-          }
-        }
-
-        await useAuthStore.getState().restoreSession();
+        // Simply restore the Supabase session - no localStorage manipulation
+        await restoreSession();
       } finally {
         setLoading(false);
       }
     };
     init();
-    // No auth listener here; it's managed globally in the store
-  }, []);
+  }, [restoreSession]);
 
   if (loading) {
     return (
@@ -58,7 +49,6 @@ export default function App() {
     return (
       <>
         <Toaster />
-
         {authView === "login" && (
           <LoginPage
             onNavigateToSignup={() => setAuthView("signup")}
@@ -69,7 +59,6 @@ export default function App() {
         {authView === "reset" && (
           <ResetPasswordPage onNavigateToLogin={() => setAuthView("login")} />
         )}
-        {/* <Toaster /> */}
       </>
     );
   }
@@ -85,7 +74,6 @@ export default function App() {
           {activeView === "admin" && <AdminPanel />}
         </div>
         <Footer />
-        {/* <Toaster /> */}
       </div>
     </>
   );

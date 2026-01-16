@@ -6,9 +6,8 @@ import { Alert, AlertDescription } from "../components/global/Alert";
 import { Loader } from "../components/global/Loader";
 import { Mail, Lock, CheckCircle2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useToast } from "../components/global/toast/useToast";
-
+import { supabase } from "../lib/supabaseClient";
 import { authApi } from "../services/api/authApi";
-
 interface ResetPasswordPageProps {
   onNavigateToLogin: () => void;
 }
@@ -25,10 +24,10 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [generatedCode, setGeneratedCode] = useState("");
+  const [generatedCode] = useState("");
 
   //  initialize the toast context hook
-  const { success, error: errorToast } = useToast();
+  const { success } = useToast();
 
   // handle email submit
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -37,15 +36,23 @@ export const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ onNavigate
     setLoading(true);
 
     try {
-      const code = await authApi.requestPasswordReset(email);
-      setGeneratedCode(code);
-      setStep("code");
+      // Use Supabase to send a password reset email
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        // optional: redirectTo: `${window.location.origin}/auth/reset-callback`
+      });
 
-      // toast.success() from addToast()
-      success("Reset code sent to your email!");
+      if (error) {
+        console.error("resetPasswordForEmail error:", error);
+        throw error;
+      }
+
+      // Supabase sends an email with a reset link — show success to user
+      setStep("success");
+      success("Password reset email sent. Check your inbox.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to send reset code");
-      setError("Failed to send reset code");
+      const msg = err instanceof Error ? err.message : "Failed to send reset email";
+      setError(msg);
+      console.error("handleEmailSubmit error:", err);
     } finally {
       setLoading(false);
     }

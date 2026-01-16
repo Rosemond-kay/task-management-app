@@ -63,15 +63,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
           <div className="space-y-3">
             <h4 className="text-[var(--text-primary)]">Resources</h4>
             <ul className="space-y-2">
-              <li>
-                <a
-                  href="#documentation"
-                  className="text-sm text-[var(--text-secondary)] hover:text-[var(--color-primary)] transition-colors duration-200"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  Documentation
-                </a>
-              </li>
+              
               <li>
                 <a
                   href="https://github.com/Rosemond-kay/task-management-app"
@@ -101,7 +93,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
         {/* Bottom Copyright Row */}
         <div className="text-center space-y-1">
           <p className="text-sm text-[var(--text-secondary)]">
-            &copy; {new Date().getFullYear()} TaskFlow. Built with ❤️ by Rosemond.
+            &copy; {new Date().getFullYear()} TaskFlow.
           </p>
           <p className="text-xs text-[var(--text-secondary)]">Powered by React + Zustand + Vite</p>
         </div>

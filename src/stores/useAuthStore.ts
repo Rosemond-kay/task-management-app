@@ -10,39 +10,59 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isAuthenticated: false,
 
-      //  LOGIN FUNCTION (Supabase)
+      // Login using Supabase auth
       login: async (email: string, password: string) => {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) throw new Error(error.message);
-        if (!data.session) throw new Error("No session returned from Supabase.");
+        if (error) {
+          console.error("login error:", error);
+          throw error;
+        }
 
-        const supaUser = data.session.user;
+        const session = data.session;
+        const supaUser = data.user ?? session?.user;
+        if (!supaUser) {
+          throw new Error("No user/session returned from Supabase");
+        }
 
-        const user: User = {
+        // fetch profile row (if any)
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", supaUser.id)
+          .maybeSingle();
+
+        if (profileError) {
+          console.warn("fetch profile warning:", profileError);
+        }
+
+        const appUser: User = {
           id: supaUser.id,
-          email: supaUser.email || "",
-          firstName: supaUser.user_metadata?.firstName || "",
-          lastName: supaUser.user_metadata?.lastName || "",
+          email: supaUser.email ?? "",
+          firstName: (profile?.first_name as string) ?? supaUser.user_metadata?.firstName ?? "",
+          lastName: (profile?.last_name as string) ?? supaUser.user_metadata?.lastName ?? "",
           avatarUrl:
             supaUser.user_metadata?.avatarUrl ||
             `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              `${supaUser.user_metadata?.firstName || ""} ${supaUser.user_metadata?.lastName || ""}`
+              `${(profile?.first_name ?? supaUser.user_metadata?.firstName ?? "").trim()} ${(profile?.last_name ?? supaUser.user_metadata?.lastName ?? "").trim()}`
             )}&background=random`,
-          role: supaUser.user_metadata?.role || "user",
+          role:
+            (profile?.role as "admin" | "user") ||
+            (supaUser.user_metadata?.role as "admin" | "user") ||
+            "user",
         };
 
         set({
-          user,
-          token: data.session.access_token,
+          user: appUser,
+          token: session?.access_token ?? null,
           isAuthenticated: true,
         });
       },
 
-      //  SIGNUP FUNCTION (Supabase)
+      // Sign up using Supabase auth
       signup: async (email: string, password: string, firstName: string, lastName: string) => {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -52,46 +72,61 @@ export const useAuthStore = create<AuthState>()(
           },
         });
 
-        if (error) throw new Error(error.message);
+        if (error) {
+          console.error("signup error:", error);
+          throw error;
+        }
 
-        //  Supabase may require email confirmation — session may be null
-        const supaUser = data.user;
+        // if session returned, user is signed in immediately
+        const session = data.session;
+        const supaUser = data.user ?? session?.user;
 
-        if (data.session) {
-          // Session exists (no email confirmation required)
-          const user: User = {
-            id: supaUser?.id || "",
-            email: supaUser?.email || email,
-            firstName,
-            lastName,
-            avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              `${firstName} ${lastName}`
-            )}&background=random`,
-            role: "user",
+        if (supaUser && session) {
+          // Attempt to fetch profile row created by trigger (if exists)
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", supaUser.id)
+            .maybeSingle();
+
+          if (profileError) console.warn("signup profile fetch warning:", profileError);
+
+          const appUser: User = {
+            id: supaUser.id,
+            email: supaUser.email ?? email,
+            firstName: (profile?.first_name as string) ?? firstName,
+            lastName: (profile?.last_name as string) ?? lastName,
+            avatarUrl:
+              supaUser.user_metadata?.avatarUrl ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(`${firstName} ${lastName}`)}&background=random`,
+            role:
+              (profile?.role as "admin" | "user") ||
+              (supaUser.user_metadata?.role as "admin" | "user") ||
+              "user",
           };
-      
+
           set({
-            user,
-            token: data.session.access_token,
+            user: appUser,
+            token: session.access_token,
             isAuthenticated: true,
           });
+
           return { needsConfirmation: false };
-        } else {
-          // Email confirmation required - user needs to confirm before getting session
-          // Don't set isAuthenticated to true yet
-          set({
-            user: null,
-            token: null,
-            isAuthenticated: false,
-          });
-          return { needsConfirmation: true };
-  }
+        }
+
+        // No session — likely requires email confirmation
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        });
+        return { needsConfirmation: true };
       },
 
-      //  LOGOUT FUNCTION
+      // Sign out using Supabase auth
       logout: async () => {
-        await supabase.auth.signOut();
-        localStorage.removeItem("auth-storage");
+        const { error } = await supabase.auth.signOut();
+        if (error) console.error("signOut error:", error);
         set({
           user: null,
           token: null,
@@ -99,102 +134,129 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
-      //  RESTORE SESSION + AUTH LISTENER
+      // Restore session using Supabase persisted session
       restoreSession: async () => {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) {
-          const msg = (error as { message?: string })?.message ?? String(error);
-          console.error("Session restore failed:", msg);
+        try {
+          const { data, error } = await supabase.auth.getSession();
+          if (error) {
+            console.error("getSession error:", error);
+            set({ user: null, token: null, isAuthenticated: false });
+            return;
+          }
+
+          const session = data.session;
+          if (!session) {
+            set({ user: null, token: null, isAuthenticated: false });
+            return;
+          }
+
+          const supaUser = session.user;
+          // fetch profile
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", supaUser.id)
+            .maybeSingle();
+
+          if (profileError) console.warn("restoreSession profile fetch warning:", profileError);
+
+          const appUser: User = {
+            id: supaUser.id,
+            email: supaUser.email ?? "",
+            firstName: (profile?.first_name as string) ?? supaUser.user_metadata?.firstName ?? "",
+            lastName: (profile?.last_name as string) ?? supaUser.user_metadata?.lastName ?? "",
+            avatarUrl:
+              supaUser.user_metadata?.avatarUrl ||
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(
+                `${(profile?.first_name ?? supaUser.user_metadata?.firstName ?? "").trim()} ${(profile?.last_name ?? supaUser.user_metadata?.lastName ?? "").trim()}`
+              )}&background=random`,
+            role:
+              (profile?.role as "admin" | "user") ||
+              (supaUser.user_metadata?.role as "admin" | "user") ||
+              "user",
+          };
+
+          set({
+            user: appUser,
+            token: session.access_token,
+            isAuthenticated: true,
+          });
+        } catch (err) {
+          console.error("restoreSession caught error:", err);
           set({ user: null, token: null, isAuthenticated: false });
-          return;
         }
-
-        const session = data.session;
-        if (!session) {
-          // No active session; ensure we clear any persisted auth state
-          set({ user: null, token: null, isAuthenticated: false });
-          return;
-        }
-
-        const supaUser = session.user;
-        const user: User = {
-          id: supaUser.id,
-          email: supaUser.email || "",
-          firstName: supaUser.user_metadata?.firstName || "",
-          lastName: supaUser.user_metadata?.lastName || "",
-          avatarUrl:
-            supaUser.user_metadata?.avatarUrl ||
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(
-              `${supaUser.user_metadata?.firstName || ""} ${supaUser.user_metadata?.lastName || ""}`
-            )}&background=random`,
-          role: supaUser.user_metadata?.role || "user",
-        };
-
-        set({
-          user,
-          token: session.access_token,
-          isAuthenticated: true,
-        });
       },
 
-      //  MANUAL USER SETTER
+      // Manual setter
       setUser: (user: User) => {
-        set((state) => ({
-          ...state,
+        set({
           user: {
             ...user,
             avatarUrl:
               user.avatarUrl ||
-              `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                `${user.firstName} ${user.lastName}`
-              )}&background=random`,
+              `https://ui-avatars.com/api/?name=${encodeURIComponent(`${user.firstName} ${user.lastName}`)}&background=random`,
           },
           isAuthenticated: true,
-        }));
+        });
       },
     }),
     {
       name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
-        token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
     }
   )
 );
 
-//  Listen for Supabase auth state changes globally
+// Subscribe to Supabase auth state changes to keep store in sync
 supabase.auth.onAuthStateChange((_event, session) => {
-  const state = useAuthStore.getState();
+  (async () => {
+    const state = useAuthStore.getState();
 
-  if (session?.user) {
-    const user = session.user;
+    if (session?.user) {
+      const user = session.user;
 
-    // Only update if the user data has changed to avoid unnecessary re-renders
-    const currentUser = state.user;
-    const newUserId = user.id;
+      // fetch profile
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .maybeSingle();
 
-    if (!currentUser || currentUser.id !== newUserId) {
-      state.setUser({
+      if (profileError) console.warn("auth listener profile fetch warning:", profileError);
+
+      const appUser: User = {
         id: user.id,
-        email: user.email || "",
-        firstName: user.user_metadata?.firstName || "",
-        lastName: user.user_metadata?.lastName || "",
+        email: user.email ?? "",
+        firstName: (profile?.first_name as string) ?? user.user_metadata?.firstName ?? "",
+        lastName: (profile?.last_name as string) ?? user.user_metadata?.lastName ?? "",
         avatarUrl:
           user.user_metadata?.avatarUrl ||
           `https://ui-avatars.com/api/?name=${encodeURIComponent(
-            `${user.user_metadata?.firstName || ""} ${user.user_metadata?.lastName || ""}`
+            `${(profile?.first_name ?? user.user_metadata?.firstName ?? "").trim()} ${(profile?.last_name ?? user.user_metadata?.lastName ?? "").trim()}`
           )}&background=random`,
-        role: user.user_metadata?.role || "user",
+        role:
+          (profile?.role as "admin" | "user") ||
+          (user.user_metadata?.role as "admin" | "user") ||
+          "user",
+      };
+
+      const currentUser = state.user;
+      if (!currentUser || currentUser.id !== appUser.id) {
+        useAuthStore.setState({
+          user: appUser,
+          token: session.access_token ?? null,
+          isAuthenticated: true,
+        });
+      }
+    } else if (useAuthStore.getState().isAuthenticated) {
+      useAuthStore.setState({
+        user: null,
+        token: null,
+        isAuthenticated: false,
       });
     }
-  } else if (state.isAuthenticated) {
-    // Only clear state if currently authenticated (avoid infinite loops)
-    useAuthStore.setState({
-      user: null,
-      token: null,
-      isAuthenticated: false,
-    });
-  }
+  })();
 });
