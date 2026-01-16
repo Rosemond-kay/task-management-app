@@ -82,7 +82,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
                 <Button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full bg-white text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
+                  className="w-full bg-[var(--color-primary)] text-[var(--text-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-hover)]"
                 >
                   <span className="flex items-center justify-center gap-2">
                     <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
@@ -189,4 +189,4 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onNavigateToSignup, onNavi
       </div>
     </>
   );
-}; 
+};
